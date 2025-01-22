@@ -2,6 +2,7 @@
 #include "wled.h"
 #include "wled_ethernet.h"
 #include <Arduino.h>
+#include "USBHIDGamepad.h"
 
 #if defined(ARDUINO_ARCH_ESP32) && defined(WLED_DISABLE_BROWNOUT_DET)
 #include "soc/soc.h"
@@ -36,6 +37,32 @@ void WLED::reset()
 
 void WLED::loop()
 {
+  extern USBHIDGamepad Gamepad;
+  extern const int numOfButtons;
+  extern byte previousButtonStates[];
+  extern byte currentButtonStates[];
+  extern byte buttonPins[];
+  extern byte physicalButtons[];
+  extern byte LEDPins[];
+
+  for (byte currentIndex = 0; currentIndex < numOfButtons; currentIndex++) {
+    currentButtonStates[currentIndex] = digitalRead(buttonPins[currentIndex]);
+
+    if (currentButtonStates[currentIndex] != previousButtonStates[currentIndex]) {
+      if (currentButtonStates[currentIndex] == LOW) {
+        Gamepad.pressButton(physicalButtons[currentIndex]);
+        digitalWrite(LEDPins[currentIndex], HIGH);
+        Serial.println("button pressed");
+      } else {
+        Gamepad.releaseButton(physicalButtons[currentIndex]);
+        digitalWrite(LEDPins[currentIndex], LOW);
+        Serial.println("button released");
+      }
+    }
+
+    previousButtonStates[currentIndex] = currentButtonStates[currentIndex];
+  }
+
   static uint32_t      lastHeap = UINT32_MAX;
   static unsigned long heapTime = 0;
 #ifdef WLED_DEBUG
