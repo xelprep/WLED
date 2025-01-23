@@ -20,13 +20,13 @@
 
 USBHIDGamepad Gamepad;
 
-extern const int numOfButtons = 4;
+extern const int numOfButtons = 8;
 
 byte previousButtonStates[numOfButtons] = { HIGH, HIGH, HIGH, HIGH };
 byte currentButtonStates[numOfButtons] = { HIGH, HIGH, HIGH, HIGH };
-byte buttonPins[numOfButtons] = { 15, 16, 17, 18 };
-byte physicalButtons[numOfButtons] = { 0, 1, 2, 3 };
-byte LEDPins[numOfButtons] = { 4, 5, 6, 7 };
+byte buttonPins[numOfButtons] = { 18, 3, 10, 12, 37, 35, 48, 21 };
+byte physicalButtons[numOfButtons] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+byte LEDPins[numOfButtons] = { 4, 5, 6, 7, 1, 2, 42, 41 };
 
 const char *productName = "FrontPanelMania";
 const char *manufacturerName = "BillCo";
