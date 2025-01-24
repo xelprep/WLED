@@ -38,12 +38,6 @@ void WLED::reset()
 void WLED::loop()
 {
   extern USBHIDGamepad Gamepad;
-  extern const int numOfButtons;
-  extern byte previousButtonStates[];
-  extern byte currentButtonStates[];
-  extern byte buttonPins[];
-  extern byte physicalButtons[];
-  extern byte LEDPins[];
 
   for (byte currentIndex = 0; currentIndex < numOfButtons; currentIndex++) {
     currentButtonStates[currentIndex] = digitalRead(buttonPins[currentIndex]);
@@ -51,19 +45,150 @@ void WLED::loop()
     if (currentButtonStates[currentIndex] != previousButtonStates[currentIndex]) {
       if (currentButtonStates[currentIndex] == LOW) {
         Gamepad.pressButton(physicalButtons[currentIndex]);
-        digitalWrite(LEDPins[currentIndex], HIGH);
-        Serial.println("button pressed");
       } else {
         Gamepad.releaseButton(physicalButtons[currentIndex]);
-        digitalWrite(LEDPins[currentIndex], LOW);
-        Serial.println("button released");
       }
     }
 
     previousButtonStates[currentIndex] = currentButtonStates[currentIndex];
   }
+  
+  if (Serial.available() > 0) {  // Do we have lights data to receive?
+      while (Serial.available() > 0) {
+          yield();
+          // While we have lights data to receive, receive and process it!
+          receivedData = Serial.read();  // Read the next byte of serial data
+          if (receivedData == '\n') {    // If we got a newline (\n), we're done receiving new light states for this update
+              lightBytePos = 0;          // The next byte of lighting data will be the first byte
 
-  static uint32_t      lastHeap = UINT32_MAX;
+              // When we're done processing the serial data we have right now, write it out!
+              digitalWrite(PIN_P1_MENULEFT, bitRead(p1LEDs, 0));  // P1 Pad
+              digitalWrite(PIN_P1_SELECT, bitRead(p1LEDs, 1));
+              digitalWrite(PIN_P1_START, bitRead(p1LEDs, 2));
+              digitalWrite(PIN_P1_MENURIGHT, bitRead(p1LEDs, 3));
+
+              digitalWrite(PIN_P2_MENULEFT, bitRead(p2LEDs, 0));  // P2 pad
+              digitalWrite(PIN_P2_SELECT, bitRead(p2LEDs, 1));
+              digitalWrite(PIN_P2_START, bitRead(p2LEDs, 2));
+              digitalWrite(PIN_P2_MENURIGHT, bitRead(p2LEDs, 3));
+
+              // digitalWrite(PIN_MARQUEE_1, bitRead(cabLEDs, 0)); //Cabinet lights
+              // digitalWrite(PIN_MARQUEE_2, bitRead(cabLEDs, 1));
+              // digitalWrite(PIN_MARQUEE_3, bitRead(cabLEDs, 2));
+              // digitalWrite(PIN_MARQUEE_4, bitRead(cabLEDs, 3));
+              // digitalWrite(PIN_P1_START, bitRead(cabLEDs, 4));
+              // digitalWrite(PIN_P1_MENU, bitRead(cabLEDs, 5));
+              // digitalWrite(PIN_P2_START, bitRead(cabLEDs, 6));
+              // digitalWrite(PIN_P2_MENU, bitRead(cabLEDs, 7));
+              // digitalWrite(PIN_BASS, bitRead(etcLEDs, 0));
+
+          } else {
+              switch (lightBytePos) {  // Which byte of lighting data are we now receiving?
+                  case 0:              // Lighting data byte 0: Cabinet lights
+                      // bitWrite(cabLEDs, 0, bitRead(receivedData, 0)); //Marquee up left
+                      // bitWrite(cabLEDs, 1, bitRead(receivedData, 1)); //Marquee up right
+                      // bitWrite(cabLEDs, 2, bitRead(receivedData, 2)); //Marquee down left
+                      // bitWrite(cabLEDs, 3, bitRead(receivedData, 3)); //Marquee down right
+
+                      // bitWrite(etcLEDs, 0, bitRead(receivedData, 4)); //Bass L
+                      // bitWrite(etcLEDs, 1, bitRead(receivedData, 5)); //Bass R (unless a song's lighting chart says otherwise, this is always the same state as Bass L)
+                      break;
+
+                  case 1:  // Byte 1: P1 menu button lights)
+                      // bitWrite(cabLEDs, 5, bitRead(receivedData, 0)); //P1 menu left (menu right almost always the same state, from what I can tell)
+                      // bitWrite(cabLEDs, 4, bitRead(receivedData, 4)); //P1 start
+                      bitWrite(p1LEDs, 0, bitRead(receivedData, 0));
+                      bitWrite(p1LEDs, 1, bitRead(receivedData, 5));
+                      bitWrite(p1LEDs, 2, bitRead(receivedData, 4));
+                      bitWrite(p1LEDs, 3, bitRead(receivedData, 1));
+
+                      // bitWrite(etcLEDs, 2, bitRead(receivedData, 5)); //P1 select
+                      break;
+
+                      // Byte 2 is for more P1 cabinet button lights that we currently don't read
+
+                  case 3:  // Byte 3: P1 gameplay button lights 1-6
+                      // The first 6 gameplay button lights are now in receivedData.
+                      // For this and P2's gameplay lights, we'll copy receivedData directly to p1LEDs.
+                      // BUT: We'll omit the highest 2 bytes of receivedData with "& 0x3F" (bitwise AND) since they don't contain lighting data.
+
+                      //(To customize what lights are mapped on the p1LEDs/p2LEDs shift registers, remove the below line and replace it with bitWrite() lines, described above)
+                      // p1LEDs = receivedData & 0x3F;
+                      if (bitRead(receivedData, 0) == 1) 
+                      {
+                        bitWrite(p1LEDs, 0, 1);
+                      }
+                      if (bitRead(receivedData, 3) == 1) 
+                      {
+                        bitWrite(p1LEDs, 1, 1);
+                      }
+                      if (bitRead(receivedData, 2) == 1) 
+                      {
+                        bitWrite(p1LEDs, 2, 2);
+                      }
+                      if (bitRead(receivedData, 1) == 1) 
+                      {
+                        bitWrite(p1LEDs, 3, 3);
+                      }
+                      break;
+
+                  case 4:  // Byte 4: P1 gameplay button lights 7-12
+                      // I can almost certainly bitwise this to be more compact, like with case 3 above. Buuut, nah.
+                      // bitWrite(p1LEDs, 6, bitRead(receivedData, 0));
+                      // bitWrite(p1LEDs, 7, bitRead(receivedData, 1));
+                      break;
+
+                      // Bytes 5-6 are for more P1 gameplay buttons that we don't read
+
+                  case 7:  // Byte 7: P2 menu
+                      // bitWrite(cabLEDs, 7, bitRead(receivedData, 0)); //P2 menu left (menu right almost always the same state, from what I can tell)
+                      // bitWrite(cabLEDs, 6, bitRead(receivedData, 4)); //P2 start
+                      bitWrite(p2LEDs, 0, bitRead(receivedData, 0));
+                      bitWrite(p2LEDs, 1, bitRead(receivedData, 5));
+                      bitWrite(p2LEDs, 2, bitRead(receivedData, 4));
+                      bitWrite(p2LEDs, 3, bitRead(receivedData, 1));
+
+                      // bitWrite(etcLEDs, 3, bitRead(receivedData, 5)); //P2 select
+                      break;
+
+                      // Byte 8 is for more P2 menu button lights that we don't read
+
+                  case 9:  // Byte 9: P2 gameplay button lights 1-6
+                      // Same as P1's gameplay lights, copy the lower 6 bis of receivedData to p2LEDs (high 2 bits omitted with & 0x3F)
+                      //  p2LEDs = receivedData & 0x3F;
+                      if (bitRead(receivedData, 0) == 1) 
+                      {
+                        bitWrite(p2LEDs, 0, 1);
+                      }
+                      if (bitRead(receivedData, 3) == 1) 
+                      {
+                        bitWrite(p2LEDs, 1, 1);
+                      }
+                      if (bitRead(receivedData, 2) == 1) 
+                      {
+                        bitWrite(p2LEDs, 2, 1);
+                      }
+                      if (bitRead(receivedData, 1) == 1) 
+                      {
+                        bitWrite(p2LEDs, 3, 1);
+                      }
+                      break;
+
+                  case 10:  // Byte 10: P2 gameplay button lights 7-12
+                      // bitWrite(p2LEDs, 6, bitRead(receivedData, 0));
+                      // bitWrite(p2LEDs, 7, bitRead(receivedData, 1));
+                      break;
+
+                      // Bytes 11-12 are for more P2 gameplay buttons we don't read
+              }
+              lightBytePos++;  // Finally, update how many bytes of lighting data we've received.
+          }
+          // Done receiving this byte of data!
+      }
+      // We've read all the serial data we can for now
+  }
+
+  static uint32_t lastHeap = UINT32_MAX;
   static unsigned long heapTime = 0;
 #ifdef WLED_DEBUG
   static unsigned long lastRun = 0;

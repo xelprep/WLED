@@ -275,6 +275,42 @@ WLED_GLOBAL char releaseString[] _INIT(WLED_RELEASE_NAME); // must include the q
 WLED_GLOBAL char apPass[65]  _INIT(WLED_AP_PASS);
 WLED_GLOBAL char otaPass[33] _INIT(DEFAULT_OTA_PASS);
 
+// FrontPanelMania Stuff
+// P1 pad light pins
+#define PIN_P1_MENULEFT 4   // P1 Left
+#define PIN_P1_MENURIGHT 7  // P1 Right
+#define PIN_P1_START 6     // P1 Up
+#define PIN_P1_SELECT 5   // P1 Down
+// P2 pad light pins
+#define PIN_P2_MENULEFT 1    // P2 Left
+#define PIN_P2_MENURIGHT 41  // P2 Right
+#define PIN_P2_START 42     // P2 Up
+#define PIN_P2_SELECT 2    // P2 Down
+#define numOfButtons 8
+// Cab light pins
+// #define PIN_MARQUEE_1 A0 //Marquee up-left
+// #define PIN_MARQUEE_2 A1 //Marquee up-right
+// #define PIN_MARQUEE_3 A2 //Marquee down-left
+// #define PIN_MARQUEE_4 A3 //Marquee down-right
+// #define PIN_BASS A4 //Bass left/right
+// Menu light pins
+// #define PIN_P1_START 10 //P1 start button
+// #define PIN_P1_MENU 11  //P1 left/right menu buttons
+// #define PIN_P2_START 12 //P2 start button
+// #define PIN_P2_MENU 13  //P2 left/right menu buttons
+// WLED_GLOBAL const int numOfButtons _INIT(8);
+WLED_GLOBAL byte previousButtonStates[] _INIT_N(({ HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH }));
+WLED_GLOBAL byte currentButtonStates[] _INIT_N(({ HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH, HIGH }));
+WLED_GLOBAL byte buttonPins[] _INIT_N(({ 18, 3, 10, 12, 37, 35, 48, 21 }));
+WLED_GLOBAL byte physicalButtons[] _INIT_N(({ 0, 1, 2, 3, 4, 5, 6, 7 }));
+WLED_GLOBAL byte LEDPins[] _INIT_N(({ PIN_P1_MENULEFT, PIN_P1_SELECT, PIN_P1_START, PIN_P1_MENURIGHT, PIN_P2_MENULEFT, PIN_P2_SELECT, PIN_P2_START, PIN_P2_MENURIGHT }));
+WLED_GLOBAL byte p1LEDs _INIT(0); //Tracks P1's lights (SM gameplay buttons 0-7)
+WLED_GLOBAL byte p2LEDs _INIT(0); //Tracks P2's lights (SM gameplay buttons 0-7)
+WLED_GLOBAL byte cabLEDs _INIT(0); //Tracks cabinet lighting. 0-3: Marquee lights, 4: P1 Start, 5: P1 Menu, 6: P2 Start, 7: P2 Menu
+WLED_GLOBAL byte etcLEDs _INIT(0); //Tracks other lights. 0: Bass neon. All other slots unused - if you want to output more lights from SM, here's a good spot.
+WLED_GLOBAL byte receivedData _INIT(0); //The last byte of data we received from Stepmania
+WLED_GLOBAL short lightBytePos _INIT(0); //Tracks how many bytes of lighting data we've received this update
+
 // Hardware and pin config
 #ifndef BTNPIN
   #define BTNPIN 0,-1
